@@ -9,22 +9,18 @@
         </div>
       </div>
       <div class="btn-group">
-        <!-- 原有知识树按钮 -->
         <el-button type="success" @click="router.push('/tree/list')">
           <el-icon><Menu /></el-icon> 知识树
         </el-button>
-        <!-- 🔥 新增：学习记录按钮 -->
         <el-button type="primary" @click="router.push('/study/record')">
           <el-icon><Document /></el-icon> 学习记录
         </el-button>
-        <!-- 原有退出登录按钮 -->
         <el-button type="danger" @click="handleLogout">
           退出登录
         </el-button>
       </div>
     </div>
 
-    <!-- 统计卡片 -->
     <div class="stats-grid">
       <el-card class="stat-card color1" shadow="hover">
         <div class="stat-content">
@@ -46,7 +42,6 @@
       </el-card>
     </div>
 
-    <!-- 🔥 每日LPS学习热力图（颜色深浅=当天LPS多少） -->
     <div class="heatmap-section">
       <h3 class="section-title">📅 每日学习力(LPS)热力图</h3>
       <div class="heatmap-card">
@@ -60,7 +55,6 @@
       </div>
     </div>
 
-    <!-- 学习时段选择 -->
     <div class="period-section">
       <h3 class="section-title">🚀 选择学习时段</h3>
       <div class="period-buttons">
@@ -76,7 +70,6 @@
       </div>
     </div>
 
-    <!-- 今日学习记录 -->
     <div class="log-section">
       <h3 class="section-title">📚 今日学习记录</h3>
       <div class="log-list" v-loading="loadingLogs">
@@ -98,7 +91,6 @@
       </div>
     </div>
 
-    <!-- 添加学习记录弹窗 -->
     <el-dialog v-model="logDialogVisible" title="✨ 添加学习记录" width="700px" @close="clearTreeCheck">
       <el-tree
         :data="treeListData"
@@ -125,10 +117,10 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { useRouter } from 'vue-router'
 import { Menu, Close, Document } from '@element-plus/icons-vue'
 
-// 热力图组件
 import { CalendarHeatmap } from 'vue3-cal-heatmap'
 import 'vue3-cal-heatmap/dist/style.css'
 
+// 🔥 引入 getDailyLpsRange
 import * as logApi from '@/api/log'
 import * as treeApi from '@/api/tree'
 import * as nodeApi from '@/api/node'
@@ -146,7 +138,6 @@ const loadingLogs = ref(false)
 const logDialogVisible = ref(false)
 const treeRef = ref(null)
 
-// 热力图：count = 当日LPS总值
 const heatmapData = ref([])
 const heatmapEndDate = ref(new Date().toISOString().split('T')[0])
 
@@ -172,7 +163,15 @@ const periodFilter = v => ({
   midnight: '午夜'
 }[v] || '时段')
 
-// 用户信息加载
+// 格式化日期
+const formatDate = (date) => {
+  const d = new Date(date)
+  const year = d.getFullYear()
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
 const loadUserData = async () => {
   try {
     const res = await userStore.fetchUserInfo()
@@ -185,7 +184,6 @@ const loadUserData = async () => {
   }
 }
 
-// 节点路径高亮
 const getNodePath = async (nodeId) => {
   try {
     const res = await fetch(`/api/node/path/${nodeId}`)
@@ -205,7 +203,6 @@ const getNodePath = async (nodeId) => {
   }
 }
 
-// 加载学习记录
 const loadLogs = async () => {
   loadingLogs.value = true
   try {
@@ -222,7 +219,6 @@ const loadLogs = async () => {
   }
 }
 
-// 加载知识树
 const loadTree = async () => {
   try {
     const treeRes = await treeApi.getTreeList()
@@ -238,7 +234,6 @@ const loadTree = async () => {
   } catch (e) {}
 }
 
-// 构建树形
 const buildTree = (nodes) => {
   const map = {}
   const roots = []
@@ -257,7 +252,6 @@ const buildTree = (nodes) => {
   return roots
 }
 
-// 弹窗操作
 const openLogDialog = (period) => {
   currentPeriod.value = period
   logDialogVisible.value = true
@@ -270,7 +264,6 @@ const clearTreeCheck = () => {
   }
 }
 
-// 添加学习记录
 const createLog = async (type) => {
   const nodes = treeRef.value?.getCheckedNodes() || []
   if (nodes.length === 0) {
@@ -296,7 +289,6 @@ const createLog = async (type) => {
   }
 }
 
-// 删除学习记录
 const delLog = async (logId) => {
   try {
     await ElMessageBox.confirm('确定删除该学习记录？', '提示', {
@@ -313,7 +305,6 @@ const delLog = async (logId) => {
   }
 }
 
-// 退出登录
 const handleLogout = () => {
   userStore.logout()
   ElMessage.success('退出登录成功')
@@ -321,34 +312,55 @@ const handleLogout = () => {
 }
 
 // ==============================================
-// 🔥 核心修改：热力图数据 = 每日LPS总量
+// 🔥 核心修改：对接真实接口 + 补全缺失日期
 // ==============================================
 const getHeatmapData = async () => {
   try {
-    // 对接后端：获取每日LPS统计
-    const res = await fetch("/api/study/daily-lps")
-    const result = await res.json()
-    if (result.code === 200 && result.data) {
-      heatmapData.value = result.data
+    // 1. 计算日期范围：最近1年
+    const endDate = formatDate(new Date())
+    const startDate = formatDate(new Date().setFullYear(new Date().getFullYear() - 1))
+    
+    // 2. 调用真实接口
+    const res = await logApi.getDailyLpsRange(startDate, endDate)
+    if (res.code === 200 && res.data) {
+      // 3. 把接口返回的数据转成 Map，方便查找
+      const lpsMap = new Map()
+      res.data.forEach(item => {
+        lpsMap.set(item.date, item.lps)
+      })
+      
+      // 4. 生成过去一年的所有日期，补全缺失的（LPS=0）
+      const fullData = []
+      const end = new Date()
+      for (let i = 364; i >= 0; i--) {
+        const date = new Date(end.getTime() - i * 86400000)
+        const dateStr = formatDate(date)
+        fullData.push({
+          date: dateStr,
+          count: lpsMap.get(dateStr) || 0 // 🔥 接口没返回的日子，count=0
+        })
+      }
+      
+      heatmapData.value = fullData
       return
     }
-  } catch (e) {}
-
-  // 模拟数据：count = 当日LPS（0~25，更贴合真实学习力）
+  } catch (e) {
+    console.error('获取热力图数据失败', e)
+  }
+  
+  // 接口失败时的备用模拟数据
   const data = []
   const end = new Date()
   for (let i = 364; i >= 0; i--) {
     const date = new Date(end.getTime() - i * 86400000)
     data.push({
       date: date.toISOString().split("T")[0],
-      // 这里count就是当天总LPS，颜色深浅由LPS大小决定
       count: Math.floor(Math.random() * 25)
     })
   }
   heatmapData.value = data
 }
 
-// 初始化
 onMounted(async () => {
   await loadUserData()
   await loadLogs()
@@ -429,7 +441,6 @@ onMounted(async () => {
   color: #333;
 }
 
-/* 热力图容器样式 */
 .heatmap-section {
   margin-bottom: 24px;
 }
