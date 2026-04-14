@@ -1,6 +1,5 @@
 <template>
   <div class="fancy-home">
-    <!-- 顶部用户栏 -->
     <div class="glass-top">
       <div class="user-box">
         <h2>🎉 欢迎回来，{{ userInfo?.username || '学习者' }}</h2>
@@ -10,9 +9,15 @@
         </div>
       </div>
       <div class="btn-group">
+        <!-- 原有知识树按钮 -->
         <el-button type="success" @click="router.push('/tree/list')">
           <el-icon><Menu /></el-icon> 知识树
         </el-button>
+        <!-- 🔥 新增：学习记录按钮 -->
+        <el-button type="primary" @click="router.push('/study/record')">
+          <el-icon><Document /></el-icon> 学习记录
+        </el-button>
+        <!-- 原有退出登录按钮 -->
         <el-button type="danger" @click="handleLogout">
           退出登录
         </el-button>
@@ -118,7 +123,7 @@ import { ref, onMounted } from 'vue'
 import { useUserStore } from '@/stores/user'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useRouter } from 'vue-router'
-import { Menu, Close } from '@element-plus/icons-vue'
+import { Menu, Close, Document } from '@element-plus/icons-vue'
 
 // 热力图组件
 import { CalendarHeatmap } from 'vue3-cal-heatmap'

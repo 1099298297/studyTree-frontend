@@ -34,6 +34,12 @@ const routes = [
     name: 'TreeDetail',
     component: () => import('@/views/TreeDetail.vue'),
     meta: { requiresAuth: true }
+  },
+  {
+    path: '/study/record',
+    name: 'StudyRecord',
+    component: () => import('@/views/study/Record.vue'),
+    meta: { title: '学习记录' }
   }
 ]
 

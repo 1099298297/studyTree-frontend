@@ -24,3 +24,14 @@ export const deleteStudyLog = (logId) => {
     method: 'delete'
   })
 }
+
+export const getDailyTotalLps = (date) => {
+  return request.get(`/log/daily-lps/${date}`)
+}
+
+// 🔥 新增：获取日期范围的LPS数据
+export const getDailyLpsRange = (startDate, endDate) => {
+  return request.get('/log/daily-lps/range', {
+    params: { startDate, endDate }
+  })
+}

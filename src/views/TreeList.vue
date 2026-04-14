@@ -1,19 +1,32 @@
 <template>
   <div class="tree-container">
     <!-- 顶部导航栏 -->
+    <!-- 在 TreeList.vue 的 tree-header 部分修改 -->
     <div class="tree-header">
       <div class="header-left">
         <h2>🌳 我的知识树</h2>
         <p>管理你的学习体系，轻松掌握知识</p>
       </div>
-      <el-button 
-        type="primary" 
-        @click="openCreateDialog"
-        class="btn-create"
-      >
-        <el-icon><Plus /></el-icon>
-        创建知识树
-      </el-button>
+      <div class="header-buttons">
+        <!-- 🔥 新增：学习记录按钮 -->
+        <el-button 
+          type="info" 
+          @click="router.push('/study/record')"
+          class="btn-record"
+        >
+          <el-icon><Document /></el-icon>
+          学习记录
+        </el-button>
+        <!-- 原有创建知识树按钮 -->
+        <el-button 
+          type="primary" 
+          @click="openCreateDialog"
+          class="btn-create"
+        >
+          <el-icon><Plus /></el-icon>
+          创建知识树
+        </el-button>
+      </div>
     </div>
 
     <!-- 知识树卡片列表 -->
@@ -102,7 +115,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, FolderOpened } from '@element-plus/icons-vue'
+import { Plus, FolderOpened, Document } from '@element-plus/icons-vue'
 import * as treeApi from '@/api/tree'
 
 const router = useRouter()
@@ -202,6 +215,16 @@ onMounted(() => fetchTreeList())
   backdrop-filter: blur(20px);
   border-radius: 20px;
   box-shadow: 0 8px 32px rgba(140, 146, 255, 0.1);
+}
+.header-buttons {
+  display: flex;
+  gap: 12px;
+}
+.btn-record {
+  height: 44px;
+  border-radius: 12px;
+  padding: 0 20px;
+  font-weight: 600;
 }
 
 .header-left h2 {
